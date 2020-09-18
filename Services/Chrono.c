@@ -12,7 +12,7 @@ Utilise la lib MyTimers.h /.c
 #include "MyTimer.h"
 
 // variable privée de type Time qui mémorise la durée mesurée
-static Time Chrono_Time; // rem : static rend la visibilité de la variable Chrono_Time limitée à ce fichier 
+Time Chrono_Time; // rem : static rend la visibilité de la variable Chrono_Time limitée à ce fichier 
 
 // variable privée qui mémorise pour le module le timer utilisé par le module
 static TIM_TypeDef * Chrono_Timer=TIM1; // init par défaut au cas où l'utilisateur ne lance pas Chrono_Conf avant toute autre fct.
@@ -37,14 +37,12 @@ void Chrono_Conf(TIM_TypeDef * Timer)
 	Chrono_Timer=Timer;
 
 	// Réglage Timer pour un débordement à 10ms
-	//MyTimer_Conf(Chrono_Timer...
+	MyTimer_Conf(Timer, 100 - 1, 7200 -1);
+
 	
 	// Réglage interruption du Timer avec callback : Chrono_Task_10ms()
-	//MyTimer_IT_Conf(..
-	
-	// Validation IT
-	//MyTimer_IT_Enable(..
-	
+	MyTimer_IT_Conf(Timer,(*Chrono_Task_10ms),2);
+
 	
 }
 
@@ -58,6 +56,7 @@ void Chrono_Conf(TIM_TypeDef * Timer)
 void Chrono_Start(void)
 {
 	//MyTimer_Start(..);
+	MyTimer_Start(Chrono_Timer);
 }
 
 
@@ -69,7 +68,7 @@ void Chrono_Start(void)
   */
 void Chrono_Stop(void)
 {
-	//MyTimer_Stop(..
+	MyTimer_Stop(Chrono_Timer);
 }
 
 
@@ -82,7 +81,7 @@ void Chrono_Stop(void)
 void Chrono_Reset(void)
 {
   // Arrêt Chrono
-	//MyTimer_Stop(..
+	MyTimer_Stop(Chrono_Timer);
 
 	// Reset Time
 	Chrono_Time.Hund=0;

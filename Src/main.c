@@ -39,13 +39,10 @@ int main(void)
 
   /* Add your application code here */
   // Configuration chronomètre
-	Chrono_Conf(TIM2);
+	Chrono_Conf(TIM1);
 	
 	// Lancement chronomètre
 	Chrono_Start(); 
-	
-	MyTimer_Conf(TIM2, 100 - 1, 7200 -1);
-	MyTimer_Start(TIM2);
   
   /* Infinite loop */
 	

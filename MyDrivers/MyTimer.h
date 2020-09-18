@@ -56,7 +56,7 @@ void MyTimer_IT_Conf(TIM_TypeDef * Timer, void (*IT_function) (void),int Prio);
 	* @param  TIM_TypeDef Timer : indique le timer à utiliser par le chronomètre, TIM1, TIM2, TIM3 ou TIM4
   * @retval None
   */
-void MyTimer_IT_Enable(TIM_TypeDef * Timer);	
+void MyTimer_IT_Enable(TIM_TypeDef * Timer);	 //On fait tt dans IT_Conf
 
 
 /**

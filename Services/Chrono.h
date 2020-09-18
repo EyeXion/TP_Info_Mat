@@ -66,4 +66,6 @@ void Chrono_Reset(void);
   */
 Time * Chrono_Read(void);
 
+void Chrono_Task_10ms(void);
+
 #endif
