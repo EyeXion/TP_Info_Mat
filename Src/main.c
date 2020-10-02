@@ -21,7 +21,6 @@
 #include "stm32f1xx_ll_system.h" // utile dans la fonction SystemClock_Config
 
 #include "Chrono.h"
-#include "MyTimer.h"
 
 void  SystemClock_Config(void);
 
@@ -32,6 +31,8 @@ void  SystemClock_Config(void);
   * @param  None
   * @retval None
   */
+	
+
 int main(void)
 {
   /* Configure the system clock to 72 MHz */
@@ -39,19 +40,14 @@ int main(void)
 
   /* Add your application code here */
   // Configuration chronomètre
-	Chrono_Conf(TIM1);
+	Chrono_Conf(TIM3);
 	
 	// Lancement chronomètre
 	Chrono_Start(); 
+	
+
   
   /* Infinite loop */
-	
-//	SPI1->CR1 |= 0x2; //CPOL à 1
-//	SPI1->CR1 &= ~(1<<11); // DFF à 0
-	
-//	USART1->CR2 &= ~(0x3<<12); // USART_CR2 STOP à 2
-//	USART1->CR2 |= (0x2<<12);
-	
   while (1)
   {
   }
@@ -112,7 +108,7 @@ void SystemClock_Config(void)
   LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
 
   /* Set systick to 1ms in using frequency set to 72MHz */
-  //LL_Init1msTick(72000000); !! décommenter que si l'IT est récupérée
+  LL_Init1msTick(72000000); // utile lorsqu'on utilise la fonction LL_mDelay
 
   /* Update CMSIS variable (which can be updated also through SystemCoreClockUpdate function) */
   LL_SetSystemCoreClock(72000000);

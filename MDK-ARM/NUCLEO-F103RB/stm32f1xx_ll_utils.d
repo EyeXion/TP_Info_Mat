@@ -10,3 +10,4 @@ nucleo-f103rb\stm32f1xx_ll_utils.o: C:\Users\elies\AppData\Local\Arm\Packs\ARM\C
 nucleo-f103rb\stm32f1xx_ll_utils.o: ..\Inc\system_stm32f1xx.h
 nucleo-f103rb\stm32f1xx_ll_utils.o: ..\LLDrivers\inc\stm32f1xx_ll_utils.h
 nucleo-f103rb\stm32f1xx_ll_utils.o: ..\LLDrivers\inc\stm32f1xx_ll_system.h
+nucleo-f103rb\stm32f1xx_ll_utils.o: ..\Inc\stm32_assert.h

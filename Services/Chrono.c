@@ -10,9 +10,11 @@ Utilise la lib MyTimers.h /.c
 
 #include "Chrono.h"
 #include "MyTimer.h"
+#include "stm32f1xx_ll_bus.h"
+#include "stm32f1xx_ll_gpio.h"
 
 // variable privée de type Time qui mémorise la durée mesurée
-Time Chrono_Time; // rem : static rend la visibilité de la variable Chrono_Time limitée à ce fichier 
+static Time Chrono_Time; // rem : static rend la visibilité de la variable Chrono_Time limitée à ce fichier 
 
 // variable privée qui mémorise pour le module le timer utilisé par le module
 static TIM_TypeDef * Chrono_Timer=TIM1; // init par défaut au cas où l'utilisateur ne lance pas Chrono_Conf avant toute autre fct.
@@ -20,14 +22,46 @@ static TIM_TypeDef * Chrono_Timer=TIM1; // init par défaut au cas où l'utilisate
 // déclaration callback appelé toute les 10ms
 void Chrono_Task_10ms(void);
 
+
+static void Chrono_Conf_io(){
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOC); //On enable la clock pour le GPIOC
+	
+	LL_GPIO_SetPinMode(GPIOC,LL_GPIO_PIN_8,LL_GPIO_MODE_FLOATING); // On met la pin 8 en mode floating input
+	LL_GPIO_SetPinMode(GPIOC,LL_GPIO_PIN_10,LL_GPIO_MODE_OUTPUT); //On met la pin 10 en output
+	LL_GPIO_SetPinOutputType(GPIOC,LL_GPIO_PIN_10,LL_GPIO_OUTPUT_OPENDRAIN); // On met la pin 10 en mode opendrain
+}
+
+void Chrono_Background(){
+	static int isChronoStarted = 0;
+	int etatButtonStartStop = LL_GPIO_IsInputPinSet(GPIOC,LL_GPIO_PIN_8);
+	int etatButtonReset = LL_GPIO_IsInputPinSet(GPIOC,LL_GPIO_PIN_13);
+	
+	if (etatButtonStartStop){
+		if (isChronoStarted){
+			isChronoStarted = 0;
+			Chrono_Stop();
+		}
+		else{
+			isChronoStarted = 1;
+			Chrono_Stop();
+		}
+	}
+	if (etatButtonReset){
+		Chrono_Reset();
+	}
+}
+
 /**
 	* @brief  Configure le chronomètre. 
   * @note   A lancer avant toute autre fonction.
 	* @param  Timer : indique le timer à utiliser par le chronomètre, TIM1, TIM2, TIM3 ou TIM4
   * @retval None
   */
+	
 void Chrono_Conf(TIM_TypeDef * Timer)
 {
+	//On l'appelle parceque c'est marqué dans le sujet (mode des PIN IO)
+	Chrono_Conf_io();
 	// Reset Time
 	Chrono_Time.Hund=0;
 	Chrono_Time.Sec=0;
@@ -37,13 +71,14 @@ void Chrono_Conf(TIM_TypeDef * Timer)
 	Chrono_Timer=Timer;
 
 	// Réglage Timer pour un débordement à 10ms
-	MyTimer_Conf(Timer, 100 - 1, 7200 -1);
-
+	MyTimer_Conf(Chrono_Timer,999, 719);
 	
 	// Réglage interruption du Timer avec callback : Chrono_Task_10ms()
-	MyTimer_IT_Conf(Timer,(*Chrono_Task_10ms),2);
-
+	MyTimer_IT_Conf(Chrono_Timer, Chrono_Task_10ms,3);
 	
+	// Validation IT
+	MyTimer_IT_Enable(Chrono_Timer);
+
 }
 
 
@@ -55,7 +90,6 @@ void Chrono_Conf(TIM_TypeDef * Timer)
   */
 void Chrono_Start(void)
 {
-	//MyTimer_Start(..);
 	MyTimer_Start(Chrono_Timer);
 }
 
@@ -111,7 +145,7 @@ Time * Chrono_Read(void)
   * @retval Aucun
   */
 void Chrono_Task_10ms(void)
-{
+{ 
 	Chrono_Time.Hund++;
 	if (Chrono_Time.Hund==100)
 	{
@@ -128,7 +162,7 @@ void Chrono_Task_10ms(void)
 		Chrono_Time.Hund=0;
 	}
 	
-	
 }
+
 
 
