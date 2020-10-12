@@ -12,6 +12,8 @@ Utilise la lib MyTimers.h /.c
 #include "MyTimer.h"
 #include "stm32f1xx_ll_bus.h"
 #include "stm32f1xx_ll_gpio.h"
+#include "stm32f1xx_ll_utils.h"
+
 
 // variable privée de type Time qui mémorise la durée mesurée
 static Time Chrono_Time; // rem : static rend la visibilité de la variable Chrono_Time limitée à ce fichier 
@@ -22,32 +24,45 @@ static TIM_TypeDef * Chrono_Timer=TIM1; // init par défaut au cas où l'utilisate
 // déclaration callback appelé toute les 10ms
 void Chrono_Task_10ms(void);
 
+static int isChronoStarted = 0;
+
+static int etatPrecedentBouton = 0;
+
 
 static void Chrono_Conf_io(){
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOC); //On enable la clock pour le GPIOC
 	
 	LL_GPIO_SetPinMode(GPIOC,LL_GPIO_PIN_8,LL_GPIO_MODE_FLOATING); // On met la pin 8 en mode floating input
-	LL_GPIO_SetPinMode(GPIOC,LL_GPIO_PIN_10,LL_GPIO_MODE_OUTPUT); //On met la pin 10 en output
+	LL_GPIO_SetPinMode(GPIOC,LL_GPIO_PIN_10,LL_GPIO_MODE_OUTPUT_2MHz); //On met la pin 10 en output
 	LL_GPIO_SetPinOutputType(GPIOC,LL_GPIO_PIN_10,LL_GPIO_OUTPUT_OPENDRAIN); // On met la pin 10 en mode opendrain
+	LL_GPIO_SetOutputPin(GPIOC,LL_GPIO_PIN_10);
 }
 
 void Chrono_Background(){
-	static int isChronoStarted = 0;
-	int etatButtonStartStop = LL_GPIO_IsInputPinSet(GPIOC,LL_GPIO_PIN_8);
-	int etatButtonReset = LL_GPIO_IsInputPinSet(GPIOC,LL_GPIO_PIN_13);
+	//int etatButtonStartStop = LL_GPIO_IsInputPinSet(GPIOC,LL_GPIO_PIN_8);
+	//int etatButtonReset = LL_GPIO_IsInputPinSet(GPIOC,LL_GPIO_PIN_13);
+	int etatPresentBouton = LL_GPIO_IsInputPinSet(GPIOC,LL_GPIO_PIN_8);
+	LL_mDelay(10);
 	
-	if (etatButtonStartStop){
+	if (etatPresentBouton == 1 && etatPrecedentBouton == 0){
+		etatPrecedentBouton = etatPresentBouton;
 		if (isChronoStarted){
 			isChronoStarted = 0;
 			Chrono_Stop();
 		}
 		else{
 			isChronoStarted = 1;
-			Chrono_Stop();
+			Chrono_Start();
 		}
 	}
-	if (etatButtonReset){
+	else if (etatPresentBouton == 0 && etatPrecedentBouton == 1){
+		etatPrecedentBouton = etatPresentBouton;
+	}
+
+	if (!LL_GPIO_IsInputPinSet(GPIOC,LL_GPIO_PIN_13)){
 		Chrono_Reset();
+		isChronoStarted = 0;
+		LL_GPIO_SetOutputPin(GPIOC,LL_GPIO_PIN_13);
 	}
 }
 
@@ -66,6 +81,7 @@ void Chrono_Conf(TIM_TypeDef * Timer)
 	Chrono_Time.Hund=0;
 	Chrono_Time.Sec=0;
 	Chrono_Time.Min=0;
+	
 	
 	// Fixation du Timer
 	Chrono_Timer=Timer;
@@ -146,11 +162,20 @@ Time * Chrono_Read(void)
   */
 void Chrono_Task_10ms(void)
 { 
+	static int LEDAllume = 0;
 	Chrono_Time.Hund++;
 	if (Chrono_Time.Hund==100)
 	{
 		Chrono_Time.Sec++;
 		Chrono_Time.Hund=0;
+		if (LEDAllume){
+			LEDAllume = 0;
+			LL_GPIO_SetOutputPin(GPIOC,LL_GPIO_PIN_10);
+		}
+		else{
+			LEDAllume = 1;
+			LL_GPIO_ResetOutputPin(GPIOC,LL_GPIO_PIN_10);
+		}
 	}
 	if (Chrono_Time.Sec==60)
 	{
