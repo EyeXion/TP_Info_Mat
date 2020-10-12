@@ -49,10 +49,7 @@ main.h enlevé
 Remarque ligne 72   LL_RCC_HSE_EnableBypass();, si on devait travailler sur MCBSTM32, il faudrait commenter la ligne
 Ligne 108 commentée, il s'agit de l'activation systick inutile mais qui active les IT non récupérée ... donc otée
 
-*********************** FIN DES MODIFICATIONS    ************************************************
 
-
-Readme d'origine ...
 
 
 

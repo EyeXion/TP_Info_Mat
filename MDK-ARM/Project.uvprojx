@@ -10,8 +10,8 @@
       <TargetName>NUCLEO-F103RB</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060422::V5.06 update 4 (build 422)::ARMCC</pCCUsed>
-      <uAC6>8</uAC6>
+      <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
+      <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
           <Device>STM32F103RB</Device>
@@ -312,7 +312,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>4</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -336,7 +336,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>--C99</MiscControls>
-              <Define>STM32F103xB,USE_FULL_LL_DRIVER,HSE_VALUE=8000000U</Define>
+              <Define>STM32F103xB,USE_FULL_LL_DRIVER,HSE_VALUE=8000000U,USE_FULL_ASSERT</Define>
               <Undefine></Undefine>
               <IncludePath>..\Inc;..\LLDrivers\inc;..\Services;..\MyDrivers</IncludePath>
             </VariousControls>
@@ -397,6 +397,11 @@
               <FileType>1</FileType>
               <FilePath>..\Services\Chrono.c</FilePath>
             </File>
+            <File>
+              <FileName>Usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usart.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -421,6 +426,21 @@
               <FileName>stm32f1xx_ll_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\LLDrivers\src\stm32f1xx_ll_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f1xx_ll_tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\LLDrivers\src\stm32f1xx_ll_tim.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f1xx_ll_gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\LLDrivers\src\stm32f1xx_ll_gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f1xx_ll_usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ProjKEIL_Chrono_TIM_IT_LL\LLDrivers\src\stm32f1xx_ll_usart.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -765,7 +785,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>4</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -789,7 +809,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>--C99</MiscControls>
-              <Define>STM32F103xB,USE_FULL_LL_DRIVER,HSE_VALUE=8000000U</Define>
+              <Define>STM32F103xB,USE_FULL_LL_DRIVER,HSE_VALUE=8000000U,USE_FULL_ASSERT</Define>
               <Undefine></Undefine>
               <IncludePath>..\Inc;..\LLDrivers\inc;..\Services;..\MyDrivers</IncludePath>
             </VariousControls>
@@ -850,6 +870,11 @@
               <FileType>1</FileType>
               <FilePath>..\Services\Chrono.c</FilePath>
             </File>
+            <File>
+              <FileName>Usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usart.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -874,6 +899,21 @@
               <FileName>stm32f1xx_ll_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\LLDrivers\src\stm32f1xx_ll_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f1xx_ll_tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\LLDrivers\src\stm32f1xx_ll_tim.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f1xx_ll_gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\LLDrivers\src\stm32f1xx_ll_gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f1xx_ll_usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ProjKEIL_Chrono_TIM_IT_LL\LLDrivers\src\stm32f1xx_ll_usart.c</FilePath>
             </File>
           </Files>
         </Group>

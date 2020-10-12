@@ -10,100 +10,173 @@
 				  pour mettre à 0  , reg = reg&~ Mask (ou Mask est le représente le ou les bits à positionner à 0)
  
 */ 
-#include "stm32f103xb.h" 
+
+#include "MyTimer.h"
+#include "stm32f1xx_ll_bus.h" // Pour l'activation des horloges
+#include "stm32f1xx_ll_tim.h" 
 
 
-void (* pTIM1_Overflow) (void); //Pointeurs de fonctions que l'on appelle dans le handler et définis dans IT_Conf
-void (* pTIM2_Overflow) (void);
-void (* pTIM3_Overflow) (void);
-void (* pTIM4_Overflow) (void);
+// variable pointeur de fonction permettant de mémoriser le callback à appeler depuis
+// le handler d'IT
+void (*Ptr_ItFct_TIM1)(void); 
+void (*Ptr_ItFct_TIM2)(void); 
+void (*Ptr_ItFct_TIM3)(void); 
+void (*Ptr_ItFct_TIM4)(void); 
 
 
-void MyTimer_Conf(TIM_TypeDef * Timer,int Arr, int Psc){
+
+
+/**
+	* @brief  Active l'horloge et règle l'ARR et le PSC du timer visé
+  * @note   Fonction à lancer avant toute autre. Le timer n'est pas encore lancé (voir MyTimerStart)
+	* @param  TIM_TypeDef Timer : indique le timer à utiliser par le chronomètre, TIM1, TIM2, TIM3 ou TIM4
+	* 				int Arr   : valeur à placer dans ARR
+	*					int Psc   : valeur à placer dans PSC
+  * @retval None
+  */
+void MyTimer_Conf(TIM_TypeDef * Timer,int Arr, int Psc)
+{
+	LL_TIM_InitTypeDef My_LL_Tim_Init_Struct;
 	
-	//Activation horloge selon timer utilisé
-	if (Timer == TIM1){
-		RCC->APB2ENR = RCC->APB2ENR | RCC_APB2ENR_TIM1EN;
-	}
-	if (Timer == TIM2){
-			RCC->APB1ENR = RCC->APB1ENR | RCC_APB1ENR_TIM2EN;
-	}
-	else if (Timer == TIM3){
-			RCC->APB1ENR = RCC->APB1ENR | RCC_APB1ENR_TIM3EN;
-	}
-	else{
-			RCC->APB1ENR = RCC->APB1ENR | RCC_APB1ENR_TIM4EN;
-	}		
+	// Validation horloge locale
+	if (Timer==TIM1) LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_TIM1);
+	else if (Timer==TIM2) LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2);
+	else if (Timer==TIM3) LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM3);
+	else  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM4);
 	
-	Timer->ARR = Arr;
-	Timer->PSC = Psc;
+	// chargement structure Arr, Psc, Up Count
+	My_LL_Tim_Init_Struct.Autoreload=Arr;
+	My_LL_Tim_Init_Struct.Prescaler=Psc;
+	My_LL_Tim_Init_Struct.ClockDivision=LL_TIM_CLOCKDIVISION_DIV1;
+	My_LL_Tim_Init_Struct.CounterMode=LL_TIM_COUNTERMODE_UP;
+	My_LL_Tim_Init_Struct.RepetitionCounter=0;
+	
+	LL_TIM_Init(Timer,&My_LL_Tim_Init_Struct);
+	
+
+	// Blocage IT
+	LL_TIM_DisableIT_UPDATE(Timer);
+	
+	
+	// Blocage Timer
+	LL_TIM_DisableCounter(Timer);
+	
+
+		
+}
+
+
+/**
+	* @brief  Démarre le timer considéré
+  * @note   
+	* @param  TIM_TypeDef Timer : indique le timer à utiliser par le chronomètre, TIM1, TIM2, TIM3 ou TIM4
+  * @retval None
+  */
+void MyTimer_Start(TIM_TypeDef * Timer)
+{
+		LL_TIM_EnableCounter(Timer);
+}
+
+/**
+	* @brief  Arrêt le timer considéré
+  * @note   
+	* @param  TIM_TypeDef Timer : indique le timer à utiliser par le chronomètre, TIM1, TIM2, TIM3 ou TIM4
+  * @retval None
+  */
+void MyTimer_Stop(TIM_TypeDef * Timer)
+{
+	LL_TIM_DisableCounter(Timer);
+}
+
+
+/**
+	* @brief  Configure le Timer considéré en interruption sur débordement.
+  * @note   A ce stade, les interruptions ne sont pas validés (voir  MyTimer_IT_Enable )
+	* @param  TIM_TypeDef Timer : indique le timer à utiliser par le chronomètre, TIM1, TIM2, TIM3 ou TIM4
+	* 				void (*IT_function) (void) : nom (adresse) de la fonction à lancer sur interruption
+	*         int Prio : priorité associée à l'interruption
+  * @retval None
+  */
+void MyTimer_IT_Conf(TIM_TypeDef * Timer, void (*IT_function) (void),int Prio)
+{
+	// affectation de la fonction
+	if (Timer==TIM1) Ptr_ItFct_TIM1=IT_function;
+	else if (Timer==TIM2)	Ptr_ItFct_TIM2=IT_function;
+	else if (Timer==TIM3)	Ptr_ItFct_TIM3=IT_function;
+	else  Ptr_ItFct_TIM4=IT_function;
+
+	
+	// Blocage IT (il faudra la débloquer voir fct suivante)
+	LL_TIM_DisableIT_UPDATE(Timer);
+	
+	// validation du canal NVIC
+	IRQn_Type TIM_irq;
+	
+	if (Timer==TIM1) TIM_irq=TIM1_UP_IRQn;
+	else if (Timer==TIM2)	TIM_irq=TIM2_IRQn;
+	else if (Timer==TIM3)	TIM_irq=TIM3_IRQn;
+	else 	TIM_irq=TIM4_IRQn;
+	
+	NVIC_SetPriority(TIM_irq, Prio);
+	NVIC_EnableIRQ(TIM_irq);
+
 	
 }
 
-void MyTimer_Start(TIM_TypeDef * Timer){
-	//Mise à 1 du bit CEN de CR1 = activation timer
-	Timer->CR1 |= 0x1;
-}
 
-void MyTimer_Stop(TIM_TypeDef * Timer){
-	//Mise à 0 du bit CEN de CR1 =  stop timer
-	Timer->CR1 &= ~0x1;
-}
-
-void MyTimer_IT_Conf(TIM_TypeDef * Timer, void (*IT_function) (void),int Prio){
-	Timer->DIER |= 0x1; //Enable Update IT (débordement du timer)
-	if (Timer == TIM1){
-		NVIC->IP[TIM1_UP_IRQn] = Prio<<4;
-		NVIC->ISER[0] |= 0x1<<TIM1_UP_IRQn;
-		pTIM1_Overflow = IT_function;
-	}
-	if (Timer == TIM2){
-		NVIC->IP[TIM2_IRQn] = Prio<<4;
-		NVIC->ISER[0] |= 0x1<<TIM2_IRQn;
-		pTIM2_Overflow = IT_function;
-	}
-	if (Timer == TIM3){
-		NVIC->IP[TIM3_IRQn] = Prio<<4;
-		NVIC->ISER[0] |= 0x1<<TIM3_IRQn;
-		pTIM3_Overflow = IT_function;
-	}
-	if (Timer == TIM4){
-		NVIC->IP[TIM4_IRQn] = Prio<<4;
-		NVIC->ISER[0] |= 0x1<<TIM4_IRQn;
-		pTIM4_Overflow = IT_function;
-	}
+/**
+	* @brief  Autorise les interruptions
+  * @note   
+	* @param  TIM_TypeDef Timer : indique le timer à utiliser par le chronomètre, TIM1, TIM2, TIM3 ou TIM4
+  * @retval None
+  */
+void MyTimer_IT_Enable(TIM_TypeDef * Timer)
+{
+		LL_TIM_EnableIT_UPDATE(Timer);
 }
 
 
-void MyTimer_IT_Disable(TIM_TypeDef * Timer){
-	Timer->DIER |= 0x0; //Disable Update IT (débordement du timer)
-	if (Timer == TIM1){
-		NVIC->ISER[0] |= 0x0<<TIM1_UP_IRQn;
-	}
-	if (Timer == TIM2){
-		NVIC->ISER[0] |= 0x0<<TIM2_IRQn;
-	}
-	if (Timer == TIM3){
-		NVIC->ISER[0] |= 0x0<<TIM3_IRQn;
-	}
-	if (Timer == TIM4){
-		NVIC->ISER[0] |= 0x0<<TIM4_IRQn;
-	}
-}
+/**
+	* @brief  Interdit les interruptions
+  * @note   
+	* @param  TIM_TypeDef Timer : indique le timer à utiliser par le chronomètre, TIM1, TIM2, TIM3 ou TIM4
+  * @retval None
+  */
+void MyTimer_IT_Disable(TIM_TypeDef * Timer)
+{
+			LL_TIM_DisableIT_UPDATE(Timer); 
+}	
 
-void TIM1_UP_IRQHandler(void){  //Fonctions qui sont les handler appelée par le NVIC lors des interruptions
-	(*pTIM1_Overflow)(); //Contien le faux "handler" qui lui contient des instructions
-	TIM1->SR = 0x0;
-}
-void TIM2_IRQHandler(void){
-	(*pTIM2_Overflow)();
-	TIM2->SR = 0x0;
-}
-void TIM3_IRQHandler(void){
-	(*pTIM3_Overflow)();
-	TIM3->SR = 0x0;
-}
-void TIM4_IRQHandler(void){
-	(*pTIM4_Overflow)();
-	TIM4->SR = 0x0;
-}
+
+/*
+============ LES INTERRUPTIONS =================================
+
+*/
+
+void TIM1_UP_IRQHandler(void)
+{
+	// rabaisser le flag d'IT
+	LL_TIM_ClearFlag_UPDATE(TIM1);
+	(*Ptr_ItFct_TIM1)();
+}	
+
+void TIM2_IRQHandler(void)
+{
+	// rabaisser le flag d'IT
+	LL_TIM_ClearFlag_UPDATE(TIM2);
+	(*Ptr_ItFct_TIM2)();
+}	
+
+void TIM3_IRQHandler(void)
+{
+	// rabaisser le flag d'IT
+	LL_TIM_ClearFlag_UPDATE(TIM3);
+	(*Ptr_ItFct_TIM3)();
+}	
+
+void TIM4_IRQHandler(void)
+{
+	// rabaisser le flag d'IT
+	LL_TIM_ClearFlag_UPDATE(TIM4);
+	(*Ptr_ItFct_TIM4)();
+}	
